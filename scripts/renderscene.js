@@ -67,7 +67,7 @@ function Init() {
 }
 
 // Animation loop - repeatedly calls rendering code
-function Animate(timestamp) {
+function Animate(timestamp) { //TODO animate
     // step 1: calculate time (time since start) 
     // step 2: transform models based on time
     // step 3: draw scene
@@ -91,7 +91,6 @@ function DrawScene() {
     //Clip and get new vertices
     //loop through vertices
     console.log(mat4x4);
-
 }
 
 // Called when user selects a new scene JSON file

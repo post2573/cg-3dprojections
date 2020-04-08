@@ -39,7 +39,6 @@ function Mat4x4Projection(mat4x4, prp, srp, vup, clip) {
     //PRP = perspective reference point (where the camera is coming from)
     var translateMat = new Matrix(4, 4); 
     Mat4x4Translate(translateMat, -prp.x, -prp.y, -prp.z); 
-    
     // 2. rotate VRC such that (u,v,n) align with (x,y,z)
     //VRC = view reference coordinates (the u, v, n system, coordinates as the viewer sees them)
     //VRC origin at PRP, direction of axis based on VUP and PRP-SRP (SRP = scene reference point)
@@ -81,7 +80,12 @@ function Mat4x4Projection(mat4x4, prp, srp, vup, clip) {
 
 // set values of mat4x4 to project a parallel image on the z=0 plane
 function Mat4x4MPar(mat4x4) {
-    mat4x4.values = [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 0], [0, 0, 0, 1]];
+    // mat4x4.values = ...;
+    mat4x4.values = [
+        [1, 0, 0, 0], 
+        [0, 1, 0, 0], 
+        [0, 0, 0, 0], 
+        [0, 0, 0, 1]]; 
 }
 
 // set values of mat4x4 to project a perspective image on the z=-1 plane
@@ -91,6 +95,7 @@ function Mat4x4MPer(mat4x4) {
         [1, 0, 0, 0], 
         [0, 1, 0, 0], 
         [0, 0, 1, 0], 
+
         [0, 0, -1, 0]]; //the -1 here is d
 }
 
