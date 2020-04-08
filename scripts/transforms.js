@@ -1,14 +1,36 @@
 // set values of mat4x4 to the parallel projection / view matrix
 function Mat4x4Parallel(mat4x4, prp, srp, vup, clip) {
+	//NPAR
     // 1. translate PRP to origin
+    var translateMat = new Matrix(4, 4);
+    Mat4x4Translate(translateMat, -prp.x, -prp.y, -prp.z);
     // 2. rotate VRC such that (u,v,n) align with (x,y,z)
-    // 3. shear such that CW is on the z-axis
-    // 4. translate near clipping plane to origin
-    // 5. scale such that view volume bounds are ([-1,1], [-1,1], [-1,0])
+    var rotateMat = new Matrix(4, 4);
+    var n = prp.subtract(srp);
+    n.normalize();
 
+    var u = vup.cross(n);
+    u.normalize();
+
+    var v = n.cross(u);
+    rotateMat.values = [[u.x, u.y, u.z, 0], [v.x, v.y, v.z, 0], [n.x, n.y, n.z, 0], [0, 0, 0, 1]];
+    // 3. shear such that CW is on the z-axis
+    var cw = Vector3((clip[0]+clip[1])/2, (clip[2]+clip[3])/2, -clip[4]); //need to use clip variable. Need to create a vector?
+    var dop = cw.subtract(Vector3(0,0,0));
+    var shPar = new Matrix(4,4);
+    Mat4x4ShearXY(shPar, (-dop.x/dop.z), (-dop.y/dop.z));
+    // 4. translate near clipping plane to origin
+    var tpar = new Matrix(4,4);
+    tpar.values = [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, clip[4]], [0, 0, 0, 1]];
+    // 5. scale such that view volume bounds are ([-1,1], [-1,1], [-1,0])
+    var sParX = 2 / (clip[1] - clip[0]);
+    var sParY = 2 / (clip[3] - clip[2]);
+    var sParZ = 1 / (clip[5] - clip[4]);
+    var sPar = new Matrix(4,4);
+    Mat4x4Scale(sPar, sParX, sParY, sParZ);
     // ...
-    // var transform = Matrix.multiply([...]);
-    // mat4x4.values = transform.values;
+    var transform = Matrix.multiply([sPar, tpar, shPar, rotateMat, translateMat]);
+    mat4x4.values = transform.values;
 }
 
 // set values of mat4x4 to the parallel projection / view matrix
@@ -25,7 +47,7 @@ function Mat4x4Projection(mat4x4, prp, srp, vup, clip) {
 
 // set values of mat4x4 to project a parallel image on the z=0 plane
 function Mat4x4MPar(mat4x4) {
-    // mat4x4.values = ...;
+    mat4x4.values = [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 0], [0, 0, 0, 1]];
 }
 
 // set values of mat4x4 to project a perspective image on the z=-1 plane
