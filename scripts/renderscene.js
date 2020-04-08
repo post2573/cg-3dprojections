@@ -60,7 +60,7 @@ function Init() {
 }
 
 // Animation loop - repeatedly calls rendering code
-function Animate(timestamp) {
+function Animate(timestamp) { //TODO animate
     // step 1: calculate time (time since start) 
     // step 2: transform models based on time
     // step 3: draw scene
@@ -77,7 +77,7 @@ function Animate(timestamp) {
 }
 
 // Main drawing code - use information contained in variable `scene`
-function DrawScene() {
+function DrawScene() { //TODO draw
     console.log(scene);
 }
 

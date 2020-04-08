@@ -9,28 +9,46 @@ function Mat4x4Parallel(mat4x4, prp, srp, vup, clip) {
     // ...
     // var transform = Matrix.multiply([...]);
     // mat4x4.values = transform.values;
+    
+    //NOTE this is Lucy's job
 }
 
 // set values of mat4x4 to the parallel projection / view matrix
 function Mat4x4Projection(mat4x4, prp, srp, vup, clip) {
+    //TODO how do I know what the inputs are
+    //gonna assume everything is a matrix (or vector, which is a child of matrix)
+    
     // 1. translate PRP to origin
+    var translatePRP = Mat4x4Translate(new Matrix(4, 4), prp.x, prp.y, prp.z); 
+    prp = Matrix.multiply(translatePRP, prp); 
+    
     // 2. rotate VRC such that (u,v,n) align with (x,y,z)
+    //what is vrc and how does it translate to my arguments? 
+    //vrc = secondary coordinate system, origin at prp and aimed from vup and srp->prp
+    //so origin was changed in step 1, now change vup and check srp
+    
     // 3. shear such that CW is on the z-axis
     // 4. scale such that view volume bounds are ([z,-z], [z,-z], [-1,zmin])
 
     // ...
     // var transform = Matrix.multiply([...]);
     // mat4x4.values = transform.values;
+    
+    //NOTE this is my job
 }
 
 // set values of mat4x4 to project a parallel image on the z=0 plane
 function Mat4x4MPar(mat4x4) {
     // mat4x4.values = ...;
+    
+    //NOTE Lucy's job
 }
 
 // set values of mat4x4 to project a perspective image on the z=-1 plane
 function Mat4x4MPer(mat4x4) {
     // mat4x4.values = ...;
+    
+    //NOTE my job
 }
 
 
