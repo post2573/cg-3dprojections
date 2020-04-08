@@ -15,7 +15,7 @@ function Mat4x4Parallel(mat4x4, prp, srp, vup, clip) {
     var v = n.cross(u);
     rotateMat.values = [[u.x, u.y, u.z, 0], [v.x, v.y, v.z, 0], [n.x, n.y, n.z, 0], [0, 0, 0, 1]];
     // 3. shear such that CW is on the z-axis
-    var cw = Vector3((clip[0]+clip[1])/2, (clip[2]+clip[3])/2, -clip[4]); //need to use clip variable. Need to create a vector?
+    var cw = Vector3((clip[0]+clip[1])/2, (clip[2]+clip[3])/2, -clip[4]); //z is -near
     var dop = cw.subtract(Vector3(0,0,0));
     var shPar = new Matrix(4,4);
     Mat4x4ShearXY(shPar, (-dop.x/dop.z), (-dop.y/dop.z));
@@ -36,13 +36,47 @@ function Mat4x4Parallel(mat4x4, prp, srp, vup, clip) {
 // set values of mat4x4 to the parallel projection / view matrix
 function Mat4x4Projection(mat4x4, prp, srp, vup, clip) {
     // 1. translate PRP to origin
+    //PRP = perspective reference point (where the camera is coming from)
+    var translateMat = new Matrix(4, 4); 
+    Mat4x4Translate(translateMat, -prp.x, -prp.y, -prp.z); 
+    
     // 2. rotate VRC such that (u,v,n) align with (x,y,z)
-    // 3. shear such that CW is on the z-axis
-    // 4. scale such that view volume bounds are ([z,-z], [z,-z], [-1,zmin])
+    //VRC = view reference coordinates (the u, v, n system, coordinates as the viewer sees them)
+    //VRC origin at PRP, direction of axis based on VUP and PRP-SRP (SRP = scene reference point)
+    var rotateMat = new Matrix(4, 4);
+    var n = prp.subtract(srp);
+    n.normalize();
 
+    var u = vup.cross(n);
+    u.normalize();
+
+    var v = n.cross(u);
+    rotateMat.values = [
+        [u.x, u.y, u.z, 0], 
+        [v.x, v.y, v.z, 0], 
+        [n.x, n.y, n.z, 0], 
+        [  0,   0,   0, 1]]; 
+    
+    // 3. shear such that CW is on the z-axis
+    //CW = center of the window = (left+right / 2, bottom+top / 2)
+    //DOP = direction of projection (CW - PRP)
+    //clip[0, 1, 2, 3, 4, 5] = [left, right, bottom, top, near, far]
+    var cw = Vector3((clip[0]+clip[1])/2, (clip[2]+clip[3])/2, -clip[4]); //need to use clip variable. Need to create a vector?
+    var dop = cw.subtract(Vector3(0,0,0));
+    dop.normalize();
+    var shPer = new Matrix(4,4);
+    Mat4x4ShearXY(shPer, (-dop.x/dop.z), (-dop.y/dop.z)); 
+    
+    // 4. scale such that view volume bounds are ([z,-z], [z,-z], [-1,zmin])
+    var sPerX = (2 * clip[4]) / ((clip[1] - clip[0]) * clip[5]); 
+    var sPerY = (2 * clip[4]) / ((clip[3] - clip[2]) * clip[5]);
+    var sPerZ =  1            /                       (clip[5]);
+    var sPer = new Matrix(4,4);
+    Mat4x4Scale(sPer, sPerX, sPerY, sPerZ);
+    
     // ...
-    // var transform = Matrix.multiply([...]);
-    // mat4x4.values = transform.values;
+    var transform = Matrix.multiply([sPer, shPer, rotateMat, translateMat]);
+    mat4x4.values = transform.values;
 }
 
 // set values of mat4x4 to project a parallel image on the z=0 plane
@@ -52,7 +86,12 @@ function Mat4x4MPar(mat4x4) {
 
 // set values of mat4x4 to project a perspective image on the z=-1 plane
 function Mat4x4MPer(mat4x4) {
-    // mat4x4.values = ...;
+    //d = distance between VRC origin and view plane
+    mat4x4.values = [
+        [1, 0, 0, 0], 
+        [0, 1, 0, 0], 
+        [0, 0, 1, 0], 
+        [0, 0, -1, 0]]; //the -1 here is d
 }
 
 

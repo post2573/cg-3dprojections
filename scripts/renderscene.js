@@ -3,6 +3,13 @@ var ctx;
 var scene;
 var start_time;
 
+var LEFT = 32;
+var RIGHT = 16;
+var BOTTOM = 8;
+var TOP = 4;
+var NEAR = 2;
+var FAR = 1;
+
 // Initialization function - called when web page loads
 function Init() {
     var w = 800;
@@ -20,7 +27,7 @@ function Init() {
             prp: Vector3(44, 20, -16),
             srp: Vector3(20, 20, -40),
             vup: Vector3(0, 1, 0),
-            clip: [-19, 5, -10, 8, 12, 100]
+            clip: [-19, 5, -10, 8, 12, 100],
         },
         models: [
             {
@@ -73,12 +80,18 @@ function Animate(timestamp) {
 
     DrawScene();
 
-    window.requestAnimationFrame(Animate);
+    //window.requestAnimationFrame(Animate);
 }
 
 // Main drawing code - use information contained in variable `scene`
 function DrawScene() {
-    console.log(scene);
+    var mat4x4 = new Matrix(4,4);
+    //Npar
+    Mat4x4Projection(mat4x4, scene.view.prp, scene.view.srp, scene.view.vup, scene.view.clip);
+    //Clip and get new vertices
+    //loop through vertices
+    console.log(mat4x4);
+
 }
 
 // Called when user selects a new scene JSON file
@@ -144,4 +157,158 @@ function DrawLine(x1, y1, x2, y2) {
     ctx.fillStyle = '#FF0000';
     ctx.fillRect(x1 - 2, y1 - 2, 4, 4);
     ctx.fillRect(x2 - 2, y2 - 2, 4, 4);
+}
+
+function parallelClip(pt0, pt1, view) {
+    var done = false;
+    var line = null;
+    var endpt0 = {x: pt0.x, y: pt0.y};
+    var endpt1 = {x: pt1.x, y: pt1.y};
+    var pt0_outcode;
+    var pt1_outcode;
+    var selectedOutcode;
+    var t;
+    var x_min
+    while(!done) {
+        //trivial accept and reject
+        pt0_outcode = parallelOutcode(endpt0, view);
+        pt1_outcode = parallelOutcode(endpt1, view);
+        if ((pt0_outcode | pt1_outcode) === 0) {
+            done = true;
+            line = {pt0: endpt0, pt1: endpt1};
+        } else if ((pt0_outcode & pt1_outcode) !== 0) {
+            done = true;
+        } else {
+            //select 1 endpoint outside of view
+            if (pt0_outcode !== 0) {
+                selectedOutcode = pt0_outcode;
+            } else {
+                selectedOutcode = pt1_outcode;
+            }
+            //find intersection with corresponding edge
+            if (selectedOutcode & LEFT) {
+                t = (-1 - endpt0.x) / (endpt1.x - endpt0.x);
+            } else if (selectedOutcode & RIGHT) {
+                t = (1 - endpt0.x) / (endpt1.x - endpt0.x);
+            } else if (selectedOutcode & BOTTOM) {
+                t = (-1 - endpt0.y) / (endpt1.y - endpt0.y);
+            } else if(selectedOutcode & TOP) {
+                t = (1 - endpt0.y) / (endpt1.y - endpt0.y);
+            } else if(selectedOutcode & NEAR) {
+                t = (0 - endpt0.z) / (endpt1.z - endpt0.z);
+            } else {
+                t = (-1 - endpt0.z) / (endpt1.z - endpt0.z);
+            }
+            //replace selected endpoint with new intersection point
+            if (selectedOutcode === pt0_outcode) {
+                endpt0.x = endpt0.x + t * (endpt1.x - endpt0.x);
+                endpt0.y = endpt0.y + t * (endpt1.y - endpt0.y);
+            } else {
+                endpt1.x = endpt0.x + t * (endpt1.x - endpt0.x);
+                endpt1.y = endpt0.y + t * (endpt1.y - endpt0.y);
+            }
+        }   
+    }
+    return line;
+}
+
+function parallelOutcode(pt) {
+    //need to figure out what is being passed in as the view
+    var outcode = 0;
+    if (pt.x < -1) {
+        outcode += LEFT;
+    } else if (pt.x > 1){
+        outcode += RIGHT;
+    }
+    
+    if (pt.y < -1) {
+        outcode += BOTTOM;
+    }else if (pt.y > 1){
+        outcode += TOP;
+    }
+
+    if (pt.z > 0) {
+        outcode += NEAR;
+    } else if (pt.z < -1) {
+        outcode += FAR;
+    }
+    
+    return outcode;
+}
+
+function perspectiveClip(pt0, pt1, view) {
+    var done = false;
+    var line = null;
+    var endpt0 = {x: pt0.x, y: pt0.y};
+    var endpt1 = {x: pt1.x, y: pt1.y};
+    var pt0_outcode;
+    var pt1_outcode;
+    var selectedOutcode;
+    var t;
+    var x_min
+    while(!done) {
+        //trivial accept and reject
+        pt0_outcode = parallelOutcode(endpt0, view);
+        pt1_outcode = parallelOutcode(endpt1, view);
+        if ((pt0_outcode | pt1_outcode) === 0) {
+            done = true;
+            line = {pt0: endpt0, pt1: endpt1};
+        } else if ((pt0_outcode & pt1_outcode) !== 0) {
+            done = true;
+        } else {
+            //select 1 endpoint outside of view
+            if (pt0_outcode !== 0) {
+                selectedOutcode = pt0_outcode;
+            } else {
+                selectedOutcode = pt1_outcode;
+            }
+            //find intersection with corresponding edge
+            if (selectedOutcode & LEFT) {
+                t = (-endpt0.x + endpt0.z) / ((endpt1.x - endpt0.x) - (endpt1.z - endpt0.z));
+            } else if (selectedOutcode & RIGHT) {
+                t = (endpt0.x + endpt0.z) / (-(endpt1.x - endpt0.x) - (endpt1.z - endpt0.z));
+            } else if (selectedOutcode & BOTTOM) {
+                t = (-endpt0.y + endpt0.z) / ((endpt1.y - endpt0.y) - (endpt1.z - endpt0.z));
+            } else if(selectedOutcode & TOP) {
+                t = (endpt0.y + endpt0.z) / (-(endpt1.y - endpt0.y) - (endpt1.z - endpt0.z));
+            } else if(selectedOutcode & NEAR) {
+                t = (endpt0.z - z_min) / (endpt1.z - endpt0.z);
+            } else {
+                t = (-endpt0.z - 1) / (endpt1.z - endpt0.z);
+            }
+            //replace selected endpoint with new intersection point
+            if (selectedOutcode === pt0_outcode) {
+                endpt0.x = endpt0.x + t * (endpt1.x - endpt0.x);
+                endpt0.y = endpt0.y + t * (endpt1.y - endpt0.y);
+            } else {
+                endpt1.x = endpt0.x + t * (endpt1.x - endpt0.x);
+                endpt1.y = endpt0.y + t * (endpt1.y - endpt0.y);
+            }
+        }   
+    }
+    return line;
+}
+
+function perspectiveOutcode(pt, scene) {
+    var z_min = -(scene.clip[5]/scene.clip[4]);
+    var outcode = 0;
+    if (pt.x < pt.z) {
+        outcode += LEFT;
+    } else if (pt.x > -pt.z){
+        outcode += RIGHT;
+    }
+    
+    if (pt.y < pt.z) {
+        outcode += BOTTOM;
+    }else if (pt.y > -pt.z){
+        outcode += TOP;
+    }
+
+    if (pt.z > z_min) {
+        outcode += NEAR;
+    } else if (pt.z < -1) {
+        outcode += FAR;
+    }
+    
+    return outcode;
 }
