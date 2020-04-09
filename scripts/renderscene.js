@@ -67,7 +67,7 @@ function Init() {
 }
 
 // Animation loop - repeatedly calls rendering code
-function Animate(timestamp) { //TODO animate
+function Animate(timestamp) { //TODO animate a time-based rotation
     // step 1: calculate time (time since start) 
     // step 2: transform models based on time
     // step 3: draw scene
@@ -106,7 +106,8 @@ function DrawScene() {
     }
         //clip
     for (var k = 0; k < scene.models.length; k++) {
-        scene.models[k].vertices.forEach((vertex) => vertices.push(Matrix.multiply([mat4x4, vertex])));
+        //TODO not all shapes have vertices by default. 
+        scene.models[k].vertices.forEach((vertex) => {vertices.push(Matrix.multiply([mat4x4, vertex]));});
         console.log(vertices);
         for (var i = 0; i < scene.models[k].edges.length; i++) {
             for(var j = 0; j < scene.models[k].edges[i].length-1; j++) {
@@ -164,8 +165,6 @@ function LoadNewScene() {
 
 // Called when user presses a key on the keyboard down 
 function OnKeyDown(event) {
-    //change scene.view.prp and such? 
-    //first delete old scene before drawing new one
     switch (event.keyCode) {
         case 37: // LEFT Arrow
             console.log("left");
