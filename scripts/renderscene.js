@@ -77,10 +77,10 @@ function Animate(timestamp) { //TODO animate
     var time = timestamp - start_time;
 
     // ... step 2
-
+    
     DrawScene();
-
-    //window.requestAnimationFrame(Animate);
+    
+    window.requestAnimationFrame(Animate);
 }
 
 // Main drawing code - use information contained in variable `scene`
@@ -93,6 +93,7 @@ function DrawScene() {
     var pt1;
     var mat4x4_m = new Matrix(4,4);
     
+    ctx.clearRect(0, 0, view.width, view.height);
 
     V.values = [[view.width/2, 0, 0, view.width/2], [0, view.height/2, 0, view.height/2], [0, 0, 1, 0], [0, 0, 0, 1]];
     if(scene.view.type === 'perspective') {
@@ -163,18 +164,28 @@ function LoadNewScene() {
 
 // Called when user presses a key on the keyboard down 
 function OnKeyDown(event) {
+    //change scene.view.prp and such? 
+    //first delete old scene before drawing new one
     switch (event.keyCode) {
         case 37: // LEFT Arrow
             console.log("left");
+            scene.view.prp.x -= 1; 
+            scene.view.srp.x -= 1; 
             break;
         case 38: // UP Arrow
             console.log("up");
+            scene.view.prp.y += 1; 
+            scene.view.srp.y += 1; 
             break;
         case 39: // RIGHT Arrow
             console.log("right");
+            scene.view.prp.x += 1; 
+            scene.view.srp.x += 1; 
             break;
         case 40: // DOWN Arrow
             console.log("down");
+            scene.view.prp.y -= 1; 
+            scene.view.srp.y -= 1; 
             break;
     }
 }
