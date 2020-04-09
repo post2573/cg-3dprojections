@@ -106,9 +106,18 @@ function DrawScene() {
     }
         //clip
     for (var k = 0; k < scene.models.length; k++) {
-        //TODO not all shapes have vertices by default. 
-        scene.models[k].vertices.forEach((vertex) => {vertices.push(Matrix.multiply([mat4x4, vertex]));});
-        console.log(vertices);
+        
+        //get the vertices from each model, depending on what shape it is
+        if(scene.models[k].type == 'general') scene.models[k].vertices.forEach((vertex) => vertices.push(Matrix.multiply([mat4x4, vertex])));
+        else if(scene.models[k].type == 'cube') getCubeVertices(scene.models[k]).forEach((vertex) => vertices.push(Matrix.multiply([mat4x4, vertex])));
+        else if(scene.models[k].type == 'cylinder') getCylinderVertices(scene.models[k]).forEach((vertex) => vertices.push(Matrix.multiply([mat4x4, vertex])));
+        else if(scene.models[k].type == 'cone') getConeVertices(scene.models[k]).forEach((vertex) => vertices.push(Matrix.multiply([mat4x4, vertex])));
+        else if(scene.models[k].type == 'sphere') getSphereVertices(scene.models[k]).forEach((vertex) => vertices.push(Matrix.multiply([mat4x4, vertex])));
+        else scene.models[k].vertices.forEach((vertex) => vertices.push(Matrix.multiply([mat4x4, vertex]))); //back to general
+        
+        console.log(vertices); 
+        
+        //clip each model, depending on type of view
         for (var i = 0; i < scene.models[k].edges.length; i++) {
             for(var j = 0; j < scene.models[k].edges[i].length-1; j++) {
                 if(scene.view.type === 'perspective') {
@@ -127,6 +136,58 @@ function DrawScene() {
             }
         }
     }   
+}
+
+//TODO move these 4 functions back to the bottom
+
+//returns an array of Vector4 vertices, given a cube model
+//cube: {type: 'cube', center: [x y z], width w, height h, depth d}
+function getCubeVertices(cube) {
+    console.log(cube); 
+    return [
+        Vector4(cube.center[0] - cube.width / 2,  cube.center[1] - cube.height / 2, cube.center[2] - cube.depth / 2, 1), 
+        Vector4(cube.center[0] - cube.width / 2,  cube.center[1] - cube.height / 2, cube.center[2] + cube.depth / 2, 1), 
+        Vector4(cube.center[0] - cube.width / 2,  cube.center[1] + cube.height / 2, cube.center[2] - cube.depth / 2, 1), 
+        Vector4(cube.center[0] - cube.width / 2,  cube.center[1] + cube.height / 2, cube.center[2] + cube.depth / 2, 1), 
+        Vector4(cube.center[0] + cube.width / 2,  cube.center[1] - cube.height / 2, cube.center[2] - cube.depth / 2, 1), 
+        Vector4(cube.center[0] + cube.width / 2,  cube.center[1] - cube.height / 2, cube.center[2] + cube.depth / 2, 1), 
+        Vector4(cube.center[0] + cube.width / 2,  cube.center[1] + cube.height / 2, cube.center[2] - cube.depth / 2, 1), 
+        Vector4(cube.center[0] + cube.width / 2,  cube.center[1] + cube.height / 2, cube.center[2] + cube.depth / 2, 1) 
+    ]; 
+}
+
+//returns an array of Vector4 vertices, given a cone model
+//cube: {type: 'cone', center: [x y z] of base, radius: r, height: h, sides: number of}
+function getConeVertices(cone) {
+    //TODO finish this method
+    return [
+        Vector4( 0,  0, -30, 1),
+        Vector4( 0,  0, -30, 1),
+        Vector4( 0,  0, -30, 1),
+        Vector4( 0,  0, -30, 1),
+    ]; 
+}
+
+//returns an array of Vector4 vertices, given a cylinder model
+function getCylinderVertices(cylinder) {
+    //TODO finish this method
+    return [
+        Vector4( 0,  0, -30, 1),
+        Vector4( 0,  0, -30, 1),
+        Vector4( 0,  0, -30, 1),
+        Vector4( 0,  0, -30, 1),
+    ]; 
+}
+
+//returns an array of Vector4 vertices, given a sphere model
+function getSphereVertices(sphere) {
+    //TODO finish this method
+    return [
+        Vector4( 0,  0, -30, 1),
+        Vector4( 0,  0, -30, 1),
+        Vector4( 0,  0, -30, 1),
+        Vector4( 0,  0, -30, 1),
+    ]; 
 }
 
 // Called when user selects a new scene JSON file
