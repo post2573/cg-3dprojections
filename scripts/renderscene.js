@@ -23,11 +23,11 @@ function Init() {
     // initial scene... feel free to change this
     scene = {
         view: {
-            type: 'perspective',
-            prp: Vector3(44, 20, -16),
-            srp: Vector3(20, 20, -40),
-            vup: Vector3(0, 1, 0),
-            clip: [-19, 5, -10, 8, 12, 100],
+           type: 'perspective',
+          prp: Vector3(10, 9, 0),
+          srp: Vector3(10, 9, -30),
+          vup: Vector3(0, 1, 0),
+          clip: [-11, 11, -11, 11, 30, 100]
         },
         models: [
             {
@@ -86,11 +86,37 @@ function Animate(timestamp) { //TODO animate
 // Main drawing code - use information contained in variable `scene`
 function DrawScene() {
     var mat4x4 = new Matrix(4,4);
-    //Npar
-    Mat4x4Projection(mat4x4, scene.view.prp, scene.view.srp, scene.view.vup, scene.view.clip);
-    //Clip and get new vertices
-    //loop through vertices
-    console.log(mat4x4);
+    var edges = scene.models[0].edges;
+    var vertices = [];
+    var line;
+    var V = new Matrix(4, 4);
+    var pt0;
+    var pt1;
+    var projection_pt0;
+    var projection_pt1;
+    var mat4x4_mper = new Matrix(4,4);
+    Mat4x4MPer(mat4x4_mper);
+
+
+    V.values = [[view.width/2, 0, 0, view.width/2], [0, view.height/2, 0, view.height/2], [0, 0, 1, 0], [0, 0, 0, 1]];
+    if(scene.view.type === 'perspective') {
+        //Nper
+        Mat4x4Projection(mat4x4, scene.view.prp, scene.view.srp, scene.view.vup, scene.view.clip);
+        scene.models[0].vertices.forEach((vertice) => vertices.push(Matrix.multiply([mat4x4, vertice])));
+        //clip
+        //loop through edges
+        for (var i = 0; i < edges.length; i++) {
+            for(var j = 0; j < edges[i].length-1; j++) {
+                line = perspectiveClip(vertices[edges[i][j]], vertices[edges[i][j+1]]);
+                if (line) {
+                    //mper
+                    pt0 = Matrix.multiply([V, mat4x4_mper, line.pt0]);
+                    pt1 = Matrix.multiply([V, mat4x4_mper, line.pt1]);
+                    DrawLine(pt0.x/pt0.w, pt0.y/pt0.w, pt1.x/pt1.w, pt1.y/pt1.w);
+                }
+            }
+        } 
+    }
 }
 
 // Called when user selects a new scene JSON file
@@ -158,7 +184,7 @@ function DrawLine(x1, y1, x2, y2) {
     ctx.fillRect(x2 - 2, y2 - 2, 4, 4);
 }
 
-function parallelClip(pt0, pt1, view) {
+function parallelClip(pt0, pt1) {
     var done = false;
     var line = null;
     var endpt0 = {x: pt0.x, y: pt0.y};
@@ -235,20 +261,20 @@ function parallelOutcode(pt) {
     return outcode;
 }
 
-function perspectiveClip(pt0, pt1, view) {
+function perspectiveClip(pt0, pt1) {
     var done = false;
     var line = null;
-    var endpt0 = {x: pt0.x, y: pt0.y};
-    var endpt1 = {x: pt1.x, y: pt1.y};
+    var endpt0 = Vector4(pt0.x, pt0.y, pt0.z, pt0.w);
+    var endpt1 = Vector4(pt1.x, pt1.y, pt1.z, pt1.w);
     var pt0_outcode;
     var pt1_outcode;
     var selectedOutcode;
     var t;
-    var x_min
+    var z_min = -(scene.view.clip[4]/scene.view.clip[5]);
     while(!done) {
         //trivial accept and reject
-        pt0_outcode = parallelOutcode(endpt0, view);
-        pt1_outcode = parallelOutcode(endpt1, view);
+        pt0_outcode = perspectiveOutcode(endpt0, view);
+        pt1_outcode = perspectiveOutcode(endpt1, view);
         if ((pt0_outcode | pt1_outcode) === 0) {
             done = true;
             line = {pt0: endpt0, pt1: endpt1};
@@ -279,17 +305,20 @@ function perspectiveClip(pt0, pt1, view) {
             if (selectedOutcode === pt0_outcode) {
                 endpt0.x = endpt0.x + t * (endpt1.x - endpt0.x);
                 endpt0.y = endpt0.y + t * (endpt1.y - endpt0.y);
+                endpt0.z = endpt0.z + t * (endpt1.z - endpt0.z);
+                //todo: set z
             } else {
                 endpt1.x = endpt0.x + t * (endpt1.x - endpt0.x);
                 endpt1.y = endpt0.y + t * (endpt1.y - endpt0.y);
+                endpt1.z = endpt0.z + t * (endpt1.z - endpt0.z);
             }
         }   
     }
     return line;
 }
 
-function perspectiveOutcode(pt, scene) {
-    var z_min = -(scene.clip[5]/scene.clip[4]);
+function perspectiveOutcode(pt) {
+    var z_min = -(scene.view.clip[4]/scene.view.clip[5]);
     var outcode = 0;
     if (pt.x < pt.z) {
         outcode += LEFT;
