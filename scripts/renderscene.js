@@ -73,6 +73,7 @@ function Animate(timestamp) { //TODO animate a time-based rotation
     // step 3: draw scene
     // step 4: request next animation frame (recursively calling same function)
 
+    ctx.clearRect(0, 0, view.width, view.height);
 
     var time = timestamp - start_time;
 
@@ -93,7 +94,7 @@ function DrawScene() {
     var pt1;
     var mat4x4_m = new Matrix(4,4);
     
-    ctx.clearRect(0, 0, view.width, view.height);
+    
 
     V.values = [[view.width/2, 0, 0, view.width/2], [0, view.height/2, 0, view.height/2], [0, 0, 1, 0], [0, 0, 0, 1]];
     if(scene.view.type === 'perspective') {
@@ -106,25 +107,15 @@ function DrawScene() {
     }
         //clip
     for (var k = 0; k < scene.models.length; k++) {
-        
-        //get the vertices from each model, depending on what shape it is
-        if(scene.models[k].type == 'general') scene.models[k].vertices.forEach((vertex) => vertices.push(Matrix.multiply([mat4x4, vertex])));
-        else if(scene.models[k].type == 'cube') getCubeVertices(scene.models[k]).forEach((vertex) => vertices.push(Matrix.multiply([mat4x4, vertex])));
-        else if(scene.models[k].type == 'cylinder') getCylinderVertices(scene.models[k]).forEach((vertex) => vertices.push(Matrix.multiply([mat4x4, vertex])));
-        else if(scene.models[k].type == 'cone') getConeVertices(scene.models[k]).forEach((vertex) => vertices.push(Matrix.multiply([mat4x4, vertex])));
-        else if(scene.models[k].type == 'sphere') getSphereVertices(scene.models[k]).forEach((vertex) => vertices.push(Matrix.multiply([mat4x4, vertex])));
-        else scene.models[k].vertices.forEach((vertex) => vertices.push(Matrix.multiply([mat4x4, vertex]))); //back to general
-        
-        console.log(vertices); 
-        
+        scene.models[k].vertices.forEach((vertex) => vertices.push(Matrix.multiply([mat4x4, vertex]))); //back to general
         //clip each model, depending on type of view
         for (var i = 0; i < scene.models[k].edges.length; i++) {
             for(var j = 0; j < scene.models[k].edges[i].length-1; j++) {
                 if(scene.view.type === 'perspective') {
                     line = perspectiveClip(vertices[scene.models[k].edges[i][j]], vertices[scene.models[k].edges[i][j+1]]);
                 } else {
-                    line = {pt0: vertices[scene.models[k].edges[i][j]], pt1: vertices[scene.models[k].edges[i][j+1]]};
-                    //line = parallelClip(vertices[scene.models[k].edges[i][j]], vertices[scene.models[k].edges[i][j+1]]);
+                    //line = {pt0: vertices[scene.models[k].edges[i][j]], pt1: vertices[scene.models[k].edges[i][j+1]]};
+                    line = parallelClip(vertices[scene.models[k].edges[i][j]], vertices[scene.models[k].edges[i][j+1]]);
                     console.log(line);
                 }
                 if (line) {
@@ -145,15 +136,26 @@ function DrawScene() {
 function getCubeVertices(cube) {
     console.log(cube); 
     return [
-        Vector4(cube.center[0] - cube.width / 2,  cube.center[1] - cube.height / 2, cube.center[2] - cube.depth / 2, 1), 
         Vector4(cube.center[0] - cube.width / 2,  cube.center[1] - cube.height / 2, cube.center[2] + cube.depth / 2, 1), 
-        Vector4(cube.center[0] - cube.width / 2,  cube.center[1] + cube.height / 2, cube.center[2] - cube.depth / 2, 1), 
-        Vector4(cube.center[0] - cube.width / 2,  cube.center[1] + cube.height / 2, cube.center[2] + cube.depth / 2, 1), 
-        Vector4(cube.center[0] + cube.width / 2,  cube.center[1] - cube.height / 2, cube.center[2] - cube.depth / 2, 1), 
         Vector4(cube.center[0] + cube.width / 2,  cube.center[1] - cube.height / 2, cube.center[2] + cube.depth / 2, 1), 
+        Vector4(cube.center[0] + cube.width / 2,  cube.center[1] - cube.height / 2, cube.center[2] - cube.depth / 2, 1), 
+        Vector4(cube.center[0] - cube.width / 2,  cube.center[1] - cube.height / 2, cube.center[2] - cube.depth / 2, 1), 
+        Vector4(cube.center[0] - cube.width / 2,  cube.center[1] + cube.height / 2, cube.center[2] + cube.depth / 2, 1), 
+        Vector4(cube.center[0] + cube.width / 2,  cube.center[1] + cube.height / 2, cube.center[2] + cube.depth / 2, 1), 
         Vector4(cube.center[0] + cube.width / 2,  cube.center[1] + cube.height / 2, cube.center[2] - cube.depth / 2, 1), 
-        Vector4(cube.center[0] + cube.width / 2,  cube.center[1] + cube.height / 2, cube.center[2] + cube.depth / 2, 1) 
+        Vector4(cube.center[0] - cube.width / 2,  cube.center[1] + cube.height / 2, cube.center[2] - cube.depth / 2, 1) 
     ]; 
+}
+
+function getCubeEdges(cube) {
+    return [
+        [0, 1, 2, 3, 0],
+        [4, 5, 6, 7, 4],
+        [0, 4],
+        [1, 5],
+        [2, 6],
+        [3, 7]
+    ]
 }
 
 //returns an array of Vector4 vertices, given a cone model
@@ -211,8 +213,21 @@ function LoadNewScene() {
                                                           scene.models[i].vertices[j][2],
                                                           1);
                 }
-            }
-            else {
+            } else if (scene.models[i].type === 'cube') {
+                var center = scene.models[i].center;
+                var width = scene.models[i].width;
+                var height = scene.models[i].height;
+                var depth = scene.models[i].depth;
+                //get the vertices for the cube
+                scene.models[i].vertices = getCubeVertices(scene.models[i]);
+                scene.models[i].edges = getCubeEdges(scene.models[i]);
+            } else if (scene.models[i].type === 'cone') {
+
+            } else if (scene.models[i].type === 'cylinder') {
+
+            } else if (scene.models[i].type === 'sphere') {
+
+            }else {
                 scene.models[i].center = Vector4(scene.models[i].center[0],
                                                  scene.models[i].center[1],
                                                  scene.models[i].center[2],
