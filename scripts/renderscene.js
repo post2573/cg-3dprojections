@@ -158,17 +158,6 @@ function getCubeEdges(cube) {
     ]
 }
 
-//returns an array of Vector4 vertices, given a cylinder model
-function getCylinderVertices(cylinder) {
-    //TODO finish this method
-    return [
-        Vector4( 0,  0, -30, 1),
-        Vector4( 0,  0, -30, 1),
-        Vector4( 0,  0, -30, 1),
-        Vector4( 0,  0, -30, 1),
-    ]; 
-}
-
 //returns an array of Vector4 vertices, given a sphere model
 function getSphereVertices(sphere) {
     //TODO finish this method
@@ -224,21 +213,88 @@ function LoadNewScene() {
                 scene.models[i].vertices.push(Vector4(center[0] + radius, center[1] - height/2, center[2], 1));
                 //find edge from tip to circle point
                 scene.models[i].edges.push([0, 1]);
-
+                
+                //find each new circle point and connect it to both the circle and the tip
                 for (var pt = 0; pt < scene.models[i].sides; pt++) {
                     var x = center[0] + radius * Math.cos(curAngle * Math.PI / 180);
                     var z = center[2] + radius * Math.sin(curAngle * Math.PI / 180);
-                    scene.models[i].vertices.push(Vector4(x, center[1] - height/2, z, 1));
-                    scene.models[i].edges.push([pt+1, 0]);
-                    scene.models[i].edges.push([pt, pt+1]);
+                    scene.models[i].vertices.push(Vector4(x, center[1] - height/2, z, 1)); //new point
+                    scene.models[i].edges.push([pt+1, 0]); //new point to the tip
+                    scene.models[i].edges.push([pt, pt+1]); //old point to new point
                     curAngle += theta;
                 }
                 scene.models[i].edges.push([scene.models[i].vertices.length-1,scene.models[i].vertices.length-2]);
 
             } else if (scene.models[i].type === 'cylinder') {
-
+                scene.models[i].vertices = []; 
+                scene.models[i].edges = []; 
+                var center = scene.models[i].center; 
+                var radius = scene.models[i].radius; 
+                var height = scene.models[i].height; 
+                var theta = 360 / scene.models[i].sides; 
+                var curAngle = theta; 
+                
+                //find first points on circles
+                scene.models[i].vertices.push(Vector4(center[0] + radius, center[1] - height/2, center[2], 1)); 
+                scene.models[i].vertices.push(Vector4(center[0] + radius, center[1] + height/2, center[2], 1)); 
+                
+                //find each new vertical pair of circle points and connect them to their circles and the matching points
+                for(var pt = 0; pt < scene.models[i].sides * 2; pt += 2) {
+                    var x = center[0] + radius * Math.cos(curAngle * Math.PI / 180); 
+                    var z = center[2] + radius * Math.sin(curAngle * Math.PI / 180); 
+                    scene.models[i].vertices.push(Vector4(x, center[1] - height/2, z, 1)); 
+                    scene.models[i].vertices.push(Vector4(x, center[1] + height/2, z, 1)); 
+                    scene.models[i].edges.push([pt  , pt+2]); //connect lower circle
+                    scene.models[i].edges.push([pt+1, pt+3]); //connect upper circle
+                    scene.models[i].edges.push([pt  , pt+1]); //connect circles vertically
+                    curAngle += theta; 
+                }
+                //connect the ends to the beginnings (and add final vertical edge)
+                scene.models[i].edges.push([scene.models[i].vertices.length-4, scene.models[i].vertices.length-2]); //connect lower circle
+                scene.models[i].edges.push([scene.models[i].vertices.length-3, scene.models[i].vertices.length-1]); //connect upper circle
+                scene.models[i].edges.push([scene.models[i].vertices.length-4, scene.models[i].vertices.length-3]); //connect circles vertically
+                
             } else if (scene.models[i].type === 'sphere') {
-
+                scene.models[i].vertices = []; 
+                scene.models[i].edges = []; 
+                var center = scene.models[i].center; 
+                var radius = scene.models[i].radius; 
+                var height = scene.models[i].height; 
+                var theta = 360 / scene.models[i].sides; 
+                var curAngle = theta; 
+                
+                //find top and bottom points
+                scene.models[i].vertices.push(Vector4(center[0], center[1] + height/2, center[2], 1)); 
+                scene.models[i].vertices.push(Vector4(center[0], center[1] - height/2, center[2], 1)); 
+                
+                //draw the center circle (find each new point and connect it to the last)
+                for (var pt = 0; pt < scene.models[i].sides; pt++) {
+                    var x = center[0] + radius * Math.cos(curAngle * Math.PI / 180);
+                    var z = center[2] + radius * Math.sin(curAngle * Math.PI / 180);
+                    scene.models[i].vertices.push(Vector4(x, center[1] - height/2, z, 1)); //new point
+                    scene.models[i].edges.push([pt, pt+1]); //old point to new point
+                    curAngle += theta;
+                }
+                scene.models[i].edges.push([scene.models[i].vertices.length-1,scene.models[i].vertices.length-2]);
+                curAngle = theta; 
+                
+                //TODO make more stacks, and make them change width
+                //top half: find each new vertical pair of circle points and connect them to their circles and the matching points
+                for(var side = 0; side < scene.models[i].sides; side++) {
+                    var x = center[0] + radius * Math.cos(curAngle * Math.PI / 180); 
+                    var z = center[2] + radius * Math.sin(curAngle * Math.PI / 180); 
+                    for(var stack = 0; stack < scene.models[i].stacks; stack++) {
+                        scene.models[i].vertices.push(Vector4(x, center[1] - height/2, z, 1)); 
+                        scene.models[i].vertices.push(Vector4(x, center[1] + height/2, z, 1)); 
+                        scene.models[i].edges.push([pt  , pt+2]); //connect lower circle
+                        scene.models[i].edges.push([pt+1, pt+3]); //connect upper circle
+                        scene.models[i].edges.push([pt  , pt+1]); //connect circles vertically
+                        //TODO do something about radius width
+                    }
+                    curAngle += theta; 
+                }
+                //TODO connect the ends to the beginnings 
+                
             }else {
                 scene.models[i].center = Vector4(scene.models[i].center[0],
                                                  scene.models[i].center[1],

@@ -13,17 +13,6 @@
             "width": 8,
             "height": 8,
             "depth": 8
-        }, 
-        {
-            "type": "cylinder",
-            "center": [12, 10, -49],
-            "radius": 5,
-            "height": 10,
-            "sides": 12,
-            "animation": {
-                "axis": "z",
-                "rps": 0.5
-            }
-        }
+        } 
     ]
 }
