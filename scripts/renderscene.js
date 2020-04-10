@@ -114,8 +114,8 @@ function DrawScene() {
                 if(scene.view.type === 'perspective') {
                     line = perspectiveClip(vertices[scene.models[k].edges[i][j]], vertices[scene.models[k].edges[i][j+1]]);
                 } else {
-                    //line = {pt0: vertices[scene.models[k].edges[i][j]], pt1: vertices[scene.models[k].edges[i][j+1]]};
-                    line = parallelClip(vertices[scene.models[k].edges[i][j]], vertices[scene.models[k].edges[i][j+1]]);
+                    line = {pt0: vertices[scene.models[k].edges[i][j]], pt1: vertices[scene.models[k].edges[i][j+1]]};
+                    //line = parallelClip(vertices[scene.models[k].edges[i][j]], vertices[scene.models[k].edges[i][j+1]]);
                     console.log(line);
                 }
                 if (line) {
@@ -156,18 +156,6 @@ function getCubeEdges(cube) {
         [2, 6],
         [3, 7]
     ]
-}
-
-//returns an array of Vector4 vertices, given a cone model
-//cube: {type: 'cone', center: [x y z] of base, radius: r, height: h, sides: number of}
-function getConeVertices(cone) {
-    //TODO finish this method
-    return [
-        Vector4( 0,  0, -30, 1),
-        Vector4( 0,  0, -30, 1),
-        Vector4( 0,  0, -30, 1),
-        Vector4( 0,  0, -30, 1),
-    ]; 
 }
 
 //returns an array of Vector4 vertices, given a cylinder model
@@ -222,6 +210,30 @@ function LoadNewScene() {
                 scene.models[i].vertices = getCubeVertices(scene.models[i]);
                 scene.models[i].edges = getCubeEdges(scene.models[i]);
             } else if (scene.models[i].type === 'cone') {
+                scene.models[i].vertices =[];
+                scene.models[i].edges =[];
+                var center = scene.models[i].center;
+                var radius = scene.models[i].radius;
+                var height = scene.models[i].height;
+                var theta = 360 / scene.models[i].sides;
+                var curAngle = theta;
+
+                //find tip
+                scene.models[i].vertices.push(Vector4(center[0], center[1] + height/2, center[2], 1));
+                //find first point on circle
+                scene.models[i].vertices.push(Vector4(center[0] + radius, center[1] - height/2, center[2], 1));
+                //find edge from tip to circle point
+                scene.models[i].edges.push([0, 1]);
+
+                for (var pt = 0; pt < scene.models[i].sides; pt++) {
+                    var x = center[0] + radius * Math.cos(curAngle * Math.PI / 180);
+                    var z = center[2] + radius * Math.sin(curAngle * Math.PI / 180);
+                    scene.models[i].vertices.push(Vector4(x, center[1] - height/2, z, 1));
+                    scene.models[i].edges.push([pt+1, 0]);
+                    scene.models[i].edges.push([pt, pt+1]);
+                    curAngle += theta;
+                }
+                scene.models[i].edges.push([scene.models[i].vertices.length-1,scene.models[i].vertices.length-2]);
 
             } else if (scene.models[i].type === 'cylinder') {
 
