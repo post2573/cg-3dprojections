@@ -116,7 +116,7 @@ function DrawScene() {
                 } else {
                     line = {pt0: vertices[scene.models[k].edges[i][j]], pt1: vertices[scene.models[k].edges[i][j+1]]};
                     //line = parallelClip(vertices[scene.models[k].edges[i][j]], vertices[scene.models[k].edges[i][j+1]]);
-                    console.log(line);
+                    //console.log(line);
                 }
                 if (line) {
                     //mper and v
@@ -127,46 +127,6 @@ function DrawScene() {
             }
         }
     }   
-}
-
-//TODO move these 4 functions back to the bottom
-
-//returns an array of Vector4 vertices, given a cube model
-//cube: {type: 'cube', center: [x y z], width w, height h, depth d}
-function getCubeVertices(cube) {
-    console.log(cube); 
-    return [
-        Vector4(cube.center[0] - cube.width / 2,  cube.center[1] - cube.height / 2, cube.center[2] + cube.depth / 2, 1), 
-        Vector4(cube.center[0] + cube.width / 2,  cube.center[1] - cube.height / 2, cube.center[2] + cube.depth / 2, 1), 
-        Vector4(cube.center[0] + cube.width / 2,  cube.center[1] - cube.height / 2, cube.center[2] - cube.depth / 2, 1), 
-        Vector4(cube.center[0] - cube.width / 2,  cube.center[1] - cube.height / 2, cube.center[2] - cube.depth / 2, 1), 
-        Vector4(cube.center[0] - cube.width / 2,  cube.center[1] + cube.height / 2, cube.center[2] + cube.depth / 2, 1), 
-        Vector4(cube.center[0] + cube.width / 2,  cube.center[1] + cube.height / 2, cube.center[2] + cube.depth / 2, 1), 
-        Vector4(cube.center[0] + cube.width / 2,  cube.center[1] + cube.height / 2, cube.center[2] - cube.depth / 2, 1), 
-        Vector4(cube.center[0] - cube.width / 2,  cube.center[1] + cube.height / 2, cube.center[2] - cube.depth / 2, 1) 
-    ]; 
-}
-
-function getCubeEdges(cube) {
-    return [
-        [0, 1, 2, 3, 0],
-        [4, 5, 6, 7, 4],
-        [0, 4],
-        [1, 5],
-        [2, 6],
-        [3, 7]
-    ]
-}
-
-//returns an array of Vector4 vertices, given a sphere model
-function getSphereVertices(sphere) {
-    //TODO finish this method
-    return [
-        Vector4( 0,  0, -30, 1),
-        Vector4( 0,  0, -30, 1),
-        Vector4( 0,  0, -30, 1),
-        Vector4( 0,  0, -30, 1),
-    ]; 
 }
 
 // Called when user selects a new scene JSON file
@@ -198,6 +158,7 @@ function LoadNewScene() {
                 //get the vertices for the cube
                 scene.models[i].vertices = getCubeVertices(scene.models[i]);
                 scene.models[i].edges = getCubeEdges(scene.models[i]);
+                
             } else if (scene.models[i].type === 'cone') {
                 scene.models[i].vertices =[];
                 scene.models[i].edges =[];
@@ -260,42 +221,32 @@ function LoadNewScene() {
                 var center = scene.models[i].center; 
                 var radius = scene.models[i].radius; 
                 var height = scene.models[i].height; 
-                var theta = 360 / scene.models[i].sides; 
-                var curAngle = theta; 
+                var sideTheta = 360 / scene.models[i].sides; 
+                var curSideAngle = 0; 
+                var stackTheta = 360 / (2*scene.models[i].stacks); 
+                var curStackAngle = 0; 
+                var curX, curY, curZ; 
+                var pt = 0; 
                 
-                //find top and bottom points
-                scene.models[i].vertices.push(Vector4(center[0], center[1] + height/2, center[2], 1)); 
-                scene.models[i].vertices.push(Vector4(center[0], center[1] - height/2, center[2], 1)); 
-                
-                //draw the center circle (find each new point and connect it to the last)
-                for (var pt = 0; pt < scene.models[i].sides; pt++) {
-                    var x = center[0] + radius * Math.cos(curAngle * Math.PI / 180);
-                    var z = center[2] + radius * Math.sin(curAngle * Math.PI / 180);
-                    scene.models[i].vertices.push(Vector4(x, center[1] - height/2, z, 1)); //new point
-                    scene.models[i].edges.push([pt, pt+1]); //old point to new point
-                    curAngle += theta;
-                }
-                scene.models[i].edges.push([scene.models[i].vertices.length-1,scene.models[i].vertices.length-2]);
-                curAngle = theta; 
-                
-                //TODO make more stacks, and make them change width
-                //top half: find each new vertical pair of circle points and connect them to their circles and the matching points
                 for(var side = 0; side < scene.models[i].sides; side++) {
-                    var x = center[0] + radius * Math.cos(curAngle * Math.PI / 180); 
-                    var z = center[2] + radius * Math.sin(curAngle * Math.PI / 180); 
                     for(var stack = 0; stack < scene.models[i].stacks; stack++) {
-                        scene.models[i].vertices.push(Vector4(x, center[1] - height/2, z, 1)); 
-                        scene.models[i].vertices.push(Vector4(x, center[1] + height/2, z, 1)); 
-                        scene.models[i].edges.push([pt  , pt+2]); //connect lower circle
-                        scene.models[i].edges.push([pt+1, pt+3]); //connect upper circle
-                        scene.models[i].edges.push([pt  , pt+1]); //connect circles vertically
-                        //TODO do something about radius width
+                        curX = radius * Math.cos(curSideAngle) * Math.sin(curStackAngle); 
+                        curY = radius * Math.sin(curSideAngle) * Math.sin(curStackAngle); 
+                        curZ = radius * Math.cos(curStackAngle); 
+                        
+                        scene.models[i].vertices.push(Vector4(curX, curY, curZ, 1)); 
+                        scene.models[i].edges.push(pt + 1, pt); //connect vertically to next point
+                        scene.models[i].edges.push(pt + scene.models[i].stacks - 1, pt); //connect horizontally to next col
+                        
+                        pt++; 
+                        curStackAngle += stackTheta; 
                     }
-                    curAngle += theta; 
+                    curSideAngle += sideTheta; 
                 }
-                //TODO connect the ends to the beginnings 
+                scene.models[i].edges.push([scene.models[i].vertices.length-2, scene.models[i].vertices.length-1]); 
+                scene.models[i].edges.push([scene.models[i].vertices.length-scene.models[i].stacks, scene.models[i].vertices.length-1]); 
                 
-            }else {
+            } else {
                 scene.models[i].center = Vector4(scene.models[i].center[0],
                                                  scene.models[i].center[1],
                                                  scene.models[i].center[2],
@@ -501,4 +452,33 @@ function perspectiveOutcode(pt) {
     }
     
     return outcode;
+}
+
+//returns an array of Vector4 vertices, given a cube model
+//cube: {type: 'cube', center: [x y z], width w, height h, depth d}
+function getCubeVertices(cube) {
+    console.log(cube); 
+    return [
+        Vector4(cube.center[0] - cube.width / 2,  cube.center[1] - cube.height / 2, cube.center[2] + cube.depth / 2, 1), 
+        Vector4(cube.center[0] + cube.width / 2,  cube.center[1] - cube.height / 2, cube.center[2] + cube.depth / 2, 1), 
+        Vector4(cube.center[0] + cube.width / 2,  cube.center[1] - cube.height / 2, cube.center[2] - cube.depth / 2, 1), 
+        Vector4(cube.center[0] - cube.width / 2,  cube.center[1] - cube.height / 2, cube.center[2] - cube.depth / 2, 1), 
+        Vector4(cube.center[0] - cube.width / 2,  cube.center[1] + cube.height / 2, cube.center[2] + cube.depth / 2, 1), 
+        Vector4(cube.center[0] + cube.width / 2,  cube.center[1] + cube.height / 2, cube.center[2] + cube.depth / 2, 1), 
+        Vector4(cube.center[0] + cube.width / 2,  cube.center[1] + cube.height / 2, cube.center[2] - cube.depth / 2, 1), 
+        Vector4(cube.center[0] - cube.width / 2,  cube.center[1] + cube.height / 2, cube.center[2] - cube.depth / 2, 1) 
+    ]; 
+}
+
+//returns a 2d array of point number pairs, given a cube model
+//cube: {type: 'cube', center: [x y z], width w, height h, depth d}
+function getCubeEdges(cube) {
+    return [
+        [0, 1, 2, 3, 0],
+        [4, 5, 6, 7, 4],
+        [0, 4],
+        [1, 5],
+        [2, 6],
+        [3, 7]
+    ]
 }
