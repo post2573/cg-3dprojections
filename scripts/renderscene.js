@@ -79,6 +79,48 @@ function Animate(timestamp) { //TODO animate a time-based rotation
 
     // ... step 2
     
+    //check each model for animation
+    for(var i = 0; i < scene.models.length; i++) {
+        //if it is animated... 
+        if(scene.models[i].animation !== undefined) { //TODO what type of empty var is this? 
+            //create a compound transform matrix for the model's animation (TODO store this somewhere?)
+            /* TODO
+            create new mat4x4 and fill it with a rotation
+            rotation = 360 / time change % of rotations/second
+            rotation = 360 / time mod rotation rate? 
+            also create translate to origin and back to original position
+            then combine in the correct order
+            
+            rps = rounds per second
+            time is in milliseconds
+            (time * 1000) / rps = 1/rounds?
+            rps / (time * 1000) = rounds? 
+            don't forget the mod for better math
+            */
+            var tmat_1 = new Matrix(4, 4); 
+            var rmat = new Matrix(4, 4); 
+            var tmat_2 = new Matrix(4, 4); 
+            var mat = new Matrix(4, 4); 
+            var rotateFunc; 
+            
+            Mat4x4Translate(tmat_1, scene.models[i].center[0], scene.models[i].center[1], scene.models[i].center[2]); 
+            Mat4x4Translate(tmat_2, -scene.models[i].center[0], -scene.models[i].center[1], -scene.models[i].center[2]); 
+            
+                 if(scene.models[i].animation.axis === "x") rotateFunc = Mat4x4RotateX; 
+            else if(scene.models[i].animation.axis === "y") rotateFunc = Mat4x4RotateY; 
+            else                                            rotateFunc = Mat4x4RotateZ; 
+            
+            rotateFunc(rmat, ((time * 1000) % scene.models[i].animation.rps) / (2*Math.PI)); 
+            
+            mat = Matrix.multiply([tmat_1, rmat, tmat_2]); 
+            
+            //apply the transformation to each vertex
+            for(var j = 0; j < scene.models[i].vertices.length; j++) {
+                scene.models[i].vertices[j] = Matrix.multiply([mat, scene.models[i].vertices[j]]); 
+            }
+        }
+    }
+    
     DrawScene();
     
     window.requestAnimationFrame(Animate);
