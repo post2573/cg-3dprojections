@@ -78,11 +78,15 @@ function Animate(timestamp) { //TODO animate a time-based rotation
     var time = timestamp - start_time;
 
     // ... step 2
-    
+    var tmat_1 = new Matrix(4, 4); 
+    var rmat = new Matrix(4, 4); 
+    var tmat_2 = new Matrix(4, 4); 
+    var mat = new Matrix(4, 4); 
+    var rotateFunc; 
     //check each model for animation
     for(var i = 0; i < scene.models.length; i++) {
         //if it is animated... 
-        if(scene.models[i].animation !== undefined) { //TODO what type of empty var is this? 
+        if(scene.models[i].animation) { //TODO what type of empty var is this? 
             //create a compound transform matrix for the model's animation (TODO store this somewhere?)
             /* TODO
             create new mat4x4 and fill it with a rotation
@@ -97,11 +101,7 @@ function Animate(timestamp) { //TODO animate a time-based rotation
             rps / (time * 1000) = rounds? 
             don't forget the mod for better math
             */
-            var tmat_1 = new Matrix(4, 4); 
-            var rmat = new Matrix(4, 4); 
-            var tmat_2 = new Matrix(4, 4); 
-            var mat = new Matrix(4, 4); 
-            var rotateFunc; 
+            
             
             Mat4x4Translate(tmat_1, scene.models[i].center[0], scene.models[i].center[1], scene.models[i].center[2]); 
             Mat4x4Translate(tmat_2, -scene.models[i].center[0], -scene.models[i].center[1], -scene.models[i].center[2]); 
@@ -305,12 +305,18 @@ function OnKeyDown(event) {
     switch (event.keyCode) {
         case 37: // LEFT Arrow
             console.log("left"); 
-            
-            scene.view.prp.x -= 1; 
-            scene.view.srp.x -= 1; //*/
-            /*
-            scene.view.srp.x += scene.view.prp.x + 1 * Math.cos(Math.abs(scene.view.prp.x - scene.view.srp.z) * Math.PI / 180); //something with the prp... difference? 
-            scene.view.srp.z += scene.view.prp.z + 1 * Math.sin(Math.abs(scene.view.prp.z - scene.view.srp.x) * Math.PI / 180); //math.abs?*/
+            var rMat = new Matrix(4, 4);
+            Mat4x4RotateY(rMat, -0.05);
+            var srp = Vector4(scene.view.srp.x, scene.view.srp.y, scene.view.srp.z, 1);
+            var prp = Vector4(scene.view.prp.x, scene.view.prp.y, scene.view.prp.z, 1);
+            srp = Matrix.multiply([rMat, srp]);
+            prp = Matrix.multiply([rMat, prp]);
+            scene.view.srp.x = srp.x;
+            scene.view.srp.y = srp.y;
+            scene.view.srp.z = srp.z;
+            scene.view.prp.x = prp.x;
+            scene.view.prp.y = prp.y;
+            scene.view.prp.z = prp.z;
             break;
         case 38: // UP Arrow
             console.log("up");
@@ -318,13 +324,19 @@ function OnKeyDown(event) {
             scene.view.srp.y += 1; 
             break;
         case 39: // RIGHT Arrow
+            var rMat = new Matrix(4, 4);
+            Mat4x4RotateY(rMat, 0.05);
+            var srp = Vector4(scene.view.srp.x, scene.view.srp.y, scene.view.srp.z, 1);
+            var prp = Vector4(scene.view.prp.x, scene.view.prp.y, scene.view.prp.z, 1);
+            srp = Matrix.multiply([rMat, srp]);
+            prp = Matrix.multiply([rMat, prp]);
+            scene.view.srp.x = srp.x;
+            scene.view.srp.y = srp.y;
+            scene.view.srp.z = srp.z;
+            scene.view.prp.x = prp.x;
+            scene.view.prp.y = prp.y;
+            scene.view.prp.z = prp.z;
             console.log("right");
-            
-            scene.view.prp.x += 1; 
-            scene.view.srp.x += 1; //*/
-            /*
-            scene.view.srp.x -= scene.view.prp.x + 1 * Math.cos(Math.abs(scene.view.prp.x - scene.view.srp.z) * Math.PI / 180); 
-            scene.view.srp.z -= scene.view.prp.z + 1 * Math.sin(Math.abs(scene.view.prp.z - scene.view.srp.x) * Math.PI / 180); //*/
             break;
         case 40: // DOWN Arrow
             console.log("down");
