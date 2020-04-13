@@ -78,15 +78,10 @@ function Animate(timestamp) { //TODO animate a time-based rotation
     var time = timestamp - start_time;
 
     // ... step 2
-    var tmat_1 = new Matrix(4, 4); 
-    var rmat = new Matrix(4, 4); 
-    var tmat_2 = new Matrix(4, 4); 
-    var mat = new Matrix(4, 4); 
-    var rotateFunc; 
     //check each model for animation
     for(var i = 0; i < scene.models.length; i++) {
         //if it is animated... 
-        if(scene.models[i].animation) { //TODO what type of empty var is this? 
+        if(scene.models[i].animation !== undefined) { //TODO what type of empty var is this? 
             //create a compound transform matrix for the model's animation (TODO store this somewhere?)
             /* TODO
             create new mat4x4 and fill it with a rotation
@@ -101,29 +96,34 @@ function Animate(timestamp) { //TODO animate a time-based rotation
             rps / (time * 1000) = rounds? 
             don't forget the mod for better math
             */
-            
-            
+            var tmat_1 = new Matrix(4, 4); 
+            var rmat = new Matrix(4, 4); 
+            var tmat_2 = new Matrix(4, 4); 
+            var mat = new Matrix(4, 4); 
+            var rotateFunc; 
+
             Mat4x4Translate(tmat_1, scene.models[i].center[0], scene.models[i].center[1], scene.models[i].center[2]); 
             Mat4x4Translate(tmat_2, -scene.models[i].center[0], -scene.models[i].center[1], -scene.models[i].center[2]); 
-            
+
                  if(scene.models[i].animation.axis === "x") rotateFunc = Mat4x4RotateX; 
             else if(scene.models[i].animation.axis === "y") rotateFunc = Mat4x4RotateY; 
             else                                            rotateFunc = Mat4x4RotateZ; 
-            
+
             rotateFunc(rmat, ((time * 1000) % scene.models[i].animation.rps) / (2*Math.PI)); 
-            
+
             mat = Matrix.multiply([tmat_1, rmat, tmat_2]); 
-            
+
             //apply the transformation to each vertex
             for(var j = 0; j < scene.models[i].vertices.length; j++) {
                 scene.models[i].vertices[j] = Matrix.multiply([mat, scene.models[i].vertices[j]]); 
             }
         }
     }
+
     
     DrawScene();
     
-    window.requestAnimationFrame(Animate);
+   window.requestAnimationFrame(Animate);
 }
 
 // Main drawing code - use information contained in variable `scene`
@@ -135,7 +135,8 @@ function DrawScene() {
     var pt0;
     var pt1;
     var mat4x4_m = new Matrix(4,4);
-    
+    var transModelVerts = [];
+
     
 
     V.values = [[view.width/2, 0, 0, view.width/2], [0, view.height/2, 0, view.height/2], [0, 0, 1, 0], [0, 0, 0, 1]];
@@ -147,17 +148,26 @@ function DrawScene() {
         Mat4x4Parallel(mat4x4, scene.view.prp, scene.view.srp, scene.view.vup, scene.view.clip);
         Mat4x4MPar(mat4x4_m);
     }
+
+    for (var i = 0; i < scene.models.length; i++) {
+        transModelVerts.push([]);
+        for (var j = 0; j < scene.models[i].vertices.length; j++) {
+            transModelVerts[i].push(Matrix.multiply([mat4x4, scene.models[i].vertices[j]]));
+        }
+    }
+
         //clip
     for (var k = 0; k < scene.models.length; k++) {
-        scene.models[k].vertices.forEach((vertex) => vertices.push(Matrix.multiply([mat4x4, vertex]))); //back to general
+        console.log(scene.models[k].vertices);
+        console.log(scene.models[k].edges);
         //clip each model, depending on type of view
         for (var i = 0; i < scene.models[k].edges.length; i++) {
             for(var j = 0; j < scene.models[k].edges[i].length-1; j++) {
                 if(scene.view.type === 'perspective') {
-                    line = perspectiveClip(vertices[scene.models[k].edges[i][j]], vertices[scene.models[k].edges[i][j+1]]);
+                    line = perspectiveClip(transModelVerts[k][scene.models[k].edges[i][j]], transModelVerts[k][scene.models[k].edges[i][j+1]]);
                 } else {
-                    line = {pt0: vertices[scene.models[k].edges[i][j]], pt1: vertices[scene.models[k].edges[i][j+1]]};
-                    //line = parallelClip(vertices[scene.models[k].edges[i][j]], vertices[scene.models[k].edges[i][j+1]]);
+                    //line = {pt0: vertices[scene.models[k].edges[i][j]], pt1: vertices[scene.models[k].edges[i][j+1]]};
+                    line = parallelClip(transModelVerts[k][scene.models[k].edges[i][j]], transModelVerts[k][scene.models[k].edges[i][j+1]]);
                     //console.log(line);
                 }
                 if (line) {
@@ -306,7 +316,7 @@ function OnKeyDown(event) {
         case 37: // LEFT Arrow
             console.log("left"); 
             var rMat = new Matrix(4, 4);
-            Mat4x4RotateY(rMat, -0.05);
+            Mat4x4RotateY(rMat, -0.1);
             var srp = Vector4(scene.view.srp.x, scene.view.srp.y, scene.view.srp.z, 1);
             var prp = Vector4(scene.view.prp.x, scene.view.prp.y, scene.view.prp.z, 1);
             srp = Matrix.multiply([rMat, srp]);
@@ -325,7 +335,7 @@ function OnKeyDown(event) {
             break;
         case 39: // RIGHT Arrow
             var rMat = new Matrix(4, 4);
-            Mat4x4RotateY(rMat, 0.05);
+            Mat4x4RotateY(rMat, 0.1);
             var srp = Vector4(scene.view.srp.x, scene.view.srp.y, scene.view.srp.z, 1);
             var prp = Vector4(scene.view.prp.x, scene.view.prp.y, scene.view.prp.z, 1);
             srp = Matrix.multiply([rMat, srp]);
