@@ -263,9 +263,9 @@ function LoadNewScene() {
                 var center = scene.models[i].center; 
                 var radius = scene.models[i].radius; 
                 var height = scene.models[i].height; 
-                var sideTheta = 360 / scene.models[i].sides; 
+                var sideTheta = (2*Math.PI) / scene.models[i].sides; 
                 var curSideAngle = 0; 
-                var stackTheta = 360 / (2*scene.models[i].stacks); 
+                var stackTheta = (2*Math.PI) / (2*scene.models[i].stacks); 
                 var curStackAngle = 0; 
                 var curX, curY, curZ; 
                 var pt = 0; 
@@ -304,9 +304,13 @@ function LoadNewScene() {
 function OnKeyDown(event) {
     switch (event.keyCode) {
         case 37: // LEFT Arrow
-            console.log("left");
+            console.log("left"); 
+            
             scene.view.prp.x -= 1; 
-            scene.view.srp.x -= 1; 
+            scene.view.srp.x -= 1; //*/
+            /*
+            scene.view.srp.x += scene.view.prp.x + 1 * Math.cos(Math.abs(scene.view.prp.x - scene.view.srp.z) * Math.PI / 180); //something with the prp... difference? 
+            scene.view.srp.z += scene.view.prp.z + 1 * Math.sin(Math.abs(scene.view.prp.z - scene.view.srp.x) * Math.PI / 180); //math.abs?*/
             break;
         case 38: // UP Arrow
             console.log("up");
@@ -315,8 +319,12 @@ function OnKeyDown(event) {
             break;
         case 39: // RIGHT Arrow
             console.log("right");
+            
             scene.view.prp.x += 1; 
-            scene.view.srp.x += 1; 
+            scene.view.srp.x += 1; //*/
+            /*
+            scene.view.srp.x -= scene.view.prp.x + 1 * Math.cos(Math.abs(scene.view.prp.x - scene.view.srp.z) * Math.PI / 180); 
+            scene.view.srp.z -= scene.view.prp.z + 1 * Math.sin(Math.abs(scene.view.prp.z - scene.view.srp.x) * Math.PI / 180); //*/
             break;
         case 40: // DOWN Arrow
             console.log("down");
