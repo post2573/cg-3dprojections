@@ -119,7 +119,6 @@ function Animate(timestamp) { //TODO animate a time-based rotation
             }
         }
     }
-
     
     DrawScene();
     
@@ -158,15 +157,14 @@ function DrawScene() {
 
         //clip
     for (var k = 0; k < scene.models.length; k++) {
-        console.log(scene.models[k].vertices);
-        console.log(scene.models[k].edges);
         //clip each model, depending on type of view
         for (var i = 0; i < scene.models[k].edges.length; i++) {
             for(var j = 0; j < scene.models[k].edges[i].length-1; j++) {
                 if(scene.view.type === 'perspective') {
+                    //line = {pt0: transModelVerts[k][scene.models[k].edges[i][j]], pt1: transModelVerts[k][scene.models[k].edges[i][j+1]]};
                     line = perspectiveClip(transModelVerts[k][scene.models[k].edges[i][j]], transModelVerts[k][scene.models[k].edges[i][j+1]]);
                 } else {
-                    //line = {pt0: vertices[scene.models[k].edges[i][j]], pt1: vertices[scene.models[k].edges[i][j+1]]};
+                    //line = {pt0: transModelVerts[k][scene.models[k].edges[i][j]], pt1: transModelVerts[k][scene.models[k].edges[i][j+1]]};
                     line = parallelClip(transModelVerts[k][scene.models[k].edges[i][j]], transModelVerts[k][scene.models[k].edges[i][j+1]]);
                     //console.log(line);
                 }
@@ -306,6 +304,7 @@ function LoadNewScene() {
             }
             scene.models[i].matrix = new Matrix(4, 4);
         }
+        DrawScene();
     };
     reader.readAsText(scene_file.files[0], "UTF-8");
 }

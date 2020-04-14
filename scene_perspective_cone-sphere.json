@@ -8,13 +8,13 @@
     },
     "models": [
         {
-            "type": "cylinder",
+            "type": "cone",
             "center": [12, 10, -49],
             "radius": 5,
             "height": 10,
             "sides": 12,
             "animation": {
-                "axis": "x",
+                "axis": "z",
                 "rps": 0.5
             }
         }

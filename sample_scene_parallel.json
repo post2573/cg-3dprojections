@@ -10,9 +10,16 @@
         {
             "type": "cube",
             "center": [0, 0, 0],
-            "width": 1.5,
-            "height": 1.5,
-            "depth": 1.5
+            "width": 0.5,
+            "height": 0.5,
+            "depth": 0.5
+        },
+        {
+            "type": "cone",
+            "center": [0, 0, 0],
+            "radius": 1,
+            "height": 1,
+            "sides": 50
         }
     ]
 }
